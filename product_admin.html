@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>상품 관리 — SUNONE Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --p:     #1a4a28;
+  --pdark: #0f2e1a;
+  --pmid:  #2d6a41;
+  --vivid: #5dbf78;
+  --bg:    #f4f6f4;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:#1a2018; min-height:100vh; display:flex; flex-direction:column; }
+
+/* ── Topbar ── */
+.topbar {
+  background:var(--pdark); padding:0 28px;
+  display:flex; align-items:center; justify-content:space-between;
+  height:54px; position:sticky; top:0; z-index:200;
+  box-shadow:0 2px 12px rgba(0,0,0,0.25);
+}
+.topbar-logo { font-size:15px; font-weight:700; color:white; display:flex; align-items:center; gap:10px; }
+.logo-mark-sm { width:28px; height:28px; background:linear-gradient(135deg,var(--vivid),var(--pmid)); border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:700; color:white; font-size:14px; }
+.topbar-nav { display:flex; gap:4px; }
+.topbar-nav a { text-decoration:none; color:rgba(255,255,255,0.65); font-size:13px; padding:7px 14px; border-radius:6px; transition:background 0.2s; }
+.topbar-nav a:hover { background:rgba(255,255,255,0.1); color:white; }
+.topbar-nav a.active { background:rgba(255,255,255,0.13); color:white; }
+.btn-save-top { background:var(--vivid); color:var(--pdark); border:none; padding:8px 22px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Noto Sans KR',sans-serif; transition:background 0.2s; }
+.btn-save-top:hover { background:#7dd99a; }
+.btn-save-top:disabled { opacity:0.6; cursor:not-allowed; }
+
+/* ── Layout ── */
+.layout { display:flex; flex:1; min-height:calc(100vh - 54px); }
+
+/* ── Sidebar ── */
+.sidebar { width:220px; min-width:220px; background:var(--p); display:flex; flex-direction:column; position:sticky; top:54px; height:calc(100vh - 54px); overflow-y:auto; }
+.sidebar-title { padding:18px 18px 10px; font-size:10px; font-weight:600; color:rgba(255,255,255,0.4); letter-spacing:1.5px; text-transform:uppercase; }
+.product-item { display:flex; align-items:center; gap:11px; padding:10px 18px; cursor:pointer; border-left:3px solid transparent; transition:background 0.15s; }
+.product-item:hover { background:rgba(255,255,255,0.07); }
+.product-item.active { background:rgba(255,255,255,0.13); border-left-color:var(--vivid); }
+.p-thumb { width:40px; height:40px; border-radius:6px; background:rgba(255,255,255,0.1); flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.p-thumb img { width:100%; height:100%; object-fit:cover; }
+.p-info { min-width:0; }
+.p-name { font-size:13px; font-weight:600; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.p-tag { font-size:10px; color:rgba(255,255,255,0.4); margin-top:2px; letter-spacing:0.5px; }
+
+/* ── Main ── */
+.main { flex:1; padding:28px 32px; max-width:860px; overflow-y:auto; }
+.server-warn { background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:11px 16px; font-size:13px; color:#856404; margin-bottom:20px; display:none; }
+.editor-head { margin-bottom:22px; }
+.editor-head h1 { font-size:20px; font-weight:700; color:var(--p); }
+.editor-head p { font-size:12px; color:#999; margin-top:3px; }
+
+.card { background:white; border-radius:12px; padding:26px; margin-bottom:18px; box-shadow:0 2px 10px rgba(0,0,0,0.05); }
+.card-ttl { font-size:13px; font-weight:700; color:var(--p); margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid #f0f5f0; display:flex; align-items:center; gap:7px; }
+.card-ttl .ico { font-size:15px; }
+
+/* Form */
+.row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.row3 { display:grid; grid-template-columns:2fr 1fr 1fr; gap:14px; }
+.fg { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+.fg:last-child { margin-bottom:0; }
+.fg label { font-size:11px; font-weight:600; color:#555; letter-spacing:0.3px; }
+.fg input, .fg textarea, .fg select {
+  border:1px solid #dde8dd; border-radius:6px; padding:9px 12px;
+  font-family:'Noto Sans KR',sans-serif; font-size:13.5px; color:#1a2018; background:#f9fcf9;
+  transition:border-color 0.2s, box-shadow 0.2s;
+}
+.fg input:focus, .fg textarea:focus { border-color:var(--pmid); outline:none; box-shadow:0 0 0 3px rgba(45,106,65,0.1); background:white; }
+.fg textarea { resize:vertical; min-height:76px; }
+.hint { font-size:11px; color:#bbb; }
+
+/* Thumbnail */
+.thumb-wrap { display:flex; gap:18px; align-items:flex-start; }
+.thumb-zone {
+  width:148px; height:148px; flex-shrink:0; border:2px dashed #ccc; border-radius:10px;
+  position:relative; overflow:hidden; background:#f9fcf9;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer; transition:border-color 0.2s;
+}
+.thumb-zone:hover { border-color:var(--pmid); }
+.thumb-zone img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; }
+.thumb-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; z-index:2; }
+.thumb-placeholder { display:flex; flex-direction:column; align-items:center; gap:6px; color:#bbb; font-size:12px; pointer-events:none; }
+.thumb-placeholder .ico { font-size:30px; }
+.thumb-del { position:absolute; top:6px; right:6px; z-index:3; width:22px; height:22px; background:rgba(0,0,0,0.5); color:white; border:none; border-radius:50%; cursor:pointer; font-size:12px; display:none; align-items:center; justify-content:center; }
+.thumb-zone:hover .thumb-del { display:flex; }
+.thumb-guide { font-size:13px; color:#777; line-height:1.9; }
+.thumb-guide strong { color:var(--p); }
+
+/* Discount preview */
+.disc-preview { padding:11px 14px; background:#f7fbf7; border:1px solid #e0ede0; border-radius:8px; font-size:14px; margin-top:12px; display:none; }
+
+/* Features */
+.feat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+/* Detail images */
+.detail-img-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.dimg-item { position:relative; aspect-ratio:3/4; border-radius:8px; overflow:hidden; background:#f0f5f0; }
+.dimg-item img { width:100%; height:100%; object-fit:cover; }
+.dimg-del { position:absolute; top:5px; right:5px; width:22px; height:22px; background:rgba(0,0,0,0.55); color:white; border:none; border-radius:50%; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.dimg-add { aspect-ratio:3/4; border:2px dashed #ccc; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; color:#bbb; font-size:12px; gap:5px; transition:border-color 0.2s, color 0.2s; }
+.dimg-add:hover { border-color:var(--pmid); color:var(--pmid); }
+.dimg-add .plus { font-size:22px; }
+.detail-hint { font-size:12px; color:#bbb; margin-top:10px; }
+
+/* Toast */
+.toast { position:fixed; bottom:24px; right:24px; z-index:9999; padding:12px 22px; border-radius:8px; font-size:14px; font-weight:500; box-shadow:0 4px 20px rgba(0,0,0,0.15); transform:translateY(80px); opacity:0; transition:transform 0.3s, opacity 0.3s; pointer-events:none; }
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.success { background:#1a4a28; color:white; }
+.toast.error { background:#c0392b; color:white; }
+
+@media (max-width:768px) {
+  .sidebar { display:none; }
+  .main { padding:18px; }
+  .row2, .row3 { grid-template-columns:1fr; }
+  .detail-img-grid { grid-template-columns:repeat(3,1fr); }
+  .thumb-wrap { flex-direction:column; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="logo-mark-sm">S</div>
+    SUNONE 상품 관리
+  </div>
+  <nav class="topbar-nav">
+    <a href="/">홈페이지</a>
+    <a href="/admin.html">기본설정</a>
+    <a href="/product_admin.html" class="active">상품관리</a>
+  </nav>
+  <button class="btn-save-top" id="btn-save" onclick="saveProducts()">저장하기</button>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-title">상품 목록</div>
+    <div id="product-list"></div>
+  </aside>
+
+  <main class="main">
+    <div class="server-warn" id="server-warn">
+      ⚠️ 파일을 직접 열었습니다. 저장하려면 <code>node server.js</code> 실행 후
+      <strong>http://localhost:3000/product_admin.html</strong> 로 접속하세요. (현재는 JSON 다운로드로 저장됩니다.)
+    </div>
+
+    <div class="editor-head">
+      <h1 id="editor-title">상품 편집</h1>
+      <p id="editor-sub">상품 정보를 수정하고 저장하세요.</p>
+    </div>
+
+    <!-- 기본 정보 -->
+    <div class="card">
+      <div class="card-ttl"><span class="ico">📦</span> 기본 정보</div>
+      <div class="thumb-wrap" style="margin-bottom:20px;">
+        <div class="thumb-zone" id="thumb-zone">
+          <div class="thumb-placeholder">
+            <span class="ico">🖼️</span>
+            <div>썸네일 이미지</div>
+            <div style="font-size:11px;">클릭하여 업로드</div>
+          </div>
+          <img id="thumb-preview" alt="썸네일">
+          <input type="file" id="thumb-input" accept="image/*">
+          <button class="thumb-del" onclick="removeThumb(event)">✕</button>
+        </div>
+        <div class="thumb-guide">
+          <strong>썸네일 이미지</strong><br>
+          제품 목록 카드에 표시되는 대표 이미지입니다.<br>
+          권장 크기: 600 × 400px 이상<br>
+          형식: JPG, PNG, WEBP<br>
+          <span style="color:#bbb;font-size:12px;">* 미등록 시 기존 이미지 유지</span>
+        </div>
+      </div>
+      <div class="row3">
+        <div class="fg">
+          <label>상품명</label>
+          <input type="text" id="f-name" placeholder="예: 토양보습제">
+        </div>
+        <div class="fg">
+          <label>카테고리 태그</label>
+          <input type="text" id="f-tag" placeholder="예: AGRICULTURE">
+        </div>
+        <div class="fg">
+          <label>단위</label>
+          <input type="text" id="f-unit" placeholder="예: 1kg">
+        </div>
+      </div>
+    </div>
+
+    <!-- 가격 -->
+    <div class="card">
+      <div class="card-ttl"><span class="ico">💰</span> 판매 가격</div>
+      <div class="row2">
+        <div class="fg">
+          <label>판매가 (원)</label>
+          <input type="number" id="f-price" placeholder="예: 35000" min="0">
+          <span class="hint">숫자만 입력 — 비워두면 "가격문의" 표시</span>
+        </div>
+        <div class="fg">
+          <label>할인가 (원) <span style="color:#bbb;font-weight:400;">— 선택</span></label>
+          <input type="number" id="f-discount" placeholder="예: 30000" min="0">
+          <span class="hint">입력 시 판매가에 취소선 표시</span>
+        </div>
+      </div>
+      <div class="disc-preview" id="disc-preview"></div>
+    </div>
+
+    <!-- 상품 설명 -->
+    <div class="card">
+      <div class="card-ttl"><span class="ico">📝</span> 상품 설명</div>
+      <div class="fg">
+        <label>상품 설명</label>
+        <textarea id="f-desc" rows="4" placeholder="상품의 주요 특징과 용도를 설명해 주세요."></textarea>
+      </div>
+      <div class="card-ttl" style="font-size:12px;border:none;padding:0;margin:16px 0 10px;">특징 항목 (최대 4개)</div>
+      <div class="feat-grid">
+        <div class="fg"><label>특징 1</label><input type="text" id="f-feat-0" placeholder="예: 최대 1,000배 수분 흡수"></div>
+        <div class="fg"><label>특징 2</label><input type="text" id="f-feat-1" placeholder="예: 골프장·사막 녹화 적용"></div>
+        <div class="fg"><label>특징 3</label><input type="text" id="f-feat-2" placeholder="예: 수분·비료 동시 공급"></div>
+        <div class="fg"><label>특징 4</label><input type="text" id="f-feat-3" placeholder="예: 실증테스트 성과 우수"></div>
+      </div>
+    </div>
+
+    <!-- 상세페이지 이미지 -->
+    <div class="card">
+      <div class="card-ttl"><span class="ico">🖼️</span> 상세페이지 이미지</div>
+      <div id="detail-img-grid" class="detail-img-grid"></div>
+      <input type="file" id="detail-img-input" accept="image/*" multiple style="display:none;">
+      <p class="detail-hint">상세보기 클릭 시 이 이미지들이 순서대로 표시됩니다. 세로형 이미지 권장. 최대 10장.</p>
+    </div>
+
+    <!-- 제품 섹션 헤더 -->
+    <div class="card">
+      <div class="card-ttl"><span class="ico">📋</span> 제품 섹션 헤더 <span style="font-size:11px;font-weight:400;color:#aaa;margin-left:6px;">— 홈페이지 '주요 제품' 상단 문구</span></div>
+      <div class="row3">
+        <div class="fg">
+          <label>태그 (소문자 영문)</label>
+          <input type="text" id="sh-tag" placeholder="예: Products">
+        </div>
+        <div class="fg" style="grid-column:span 2;">
+          <label>섹션 제목</label>
+          <input type="text" id="sh-title" placeholder="예: 주요 제품">
+        </div>
+      </div>
+      <div class="fg">
+        <label>섹션 설명</label>
+        <textarea id="sh-desc" rows="2" style="resize:vertical;padding:10px;border:1px solid #e0e8e0;border-radius:8px;font-size:14px;width:100%;box-sizing:border-box;" placeholder="제품 섹션 소개 문구를 입력하세요."></textarea>
+      </div>
+    </div>
+
+    <!-- 입금 계좌 정보 -->
+    <div class="card">
+      <div class="card-ttl"><span class="ico">🏦</span> 입금 계좌 정보 <span style="font-size:11px;font-weight:400;color:#aaa;margin-left:6px;">— 모든 상품 공통 적용</span></div>
+      <div class="row3">
+        <div class="fg">
+          <label>은행명</label>
+          <input type="text" id="b-bank" placeholder="예: 신한은행">
+        </div>
+        <div class="fg" style="grid-column:span 2;">
+          <label>계좌번호</label>
+          <input type="text" id="b-account" placeholder="예: 100-000-000000">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="fg">
+          <label>예금주</label>
+          <input type="text" id="b-holder" placeholder="예: 주식회사 썬원">
+        </div>
+        <div class="fg">
+          <label>안내 메모 <span style="color:#bbb;font-weight:400;">— 선택</span></label>
+          <input type="text" id="b-memo" placeholder="예: 입금 후 문자 주시면 빠르게 처리됩니다.">
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const IS_SERVER = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+let products = [];
+let bankInfo = { bankName:'', accountNumber:'', accountHolder:'', memo:'' };
+let sectionHeader = { tag:'Products', title:'주요 제품', desc:'' };
+let currentIdx = 0;
+let newThumbBase64 = null;
+
+async function init() {
+  if (!IS_SERVER) document.getElementById('server-warn').style.display = 'block';
+
+  try {
+    const res = await fetch('products.json?t=' + Date.now());
+    if (res.ok) {
+      const json = await res.json();
+      products = json.products || [];
+      if (json.bankInfo) bankInfo = json.bankInfo;
+      if (json.sectionHeader) sectionHeader = json.sectionHeader;
+    }
+  } catch(e) {}
+
+  if (!products.length) products = defaultProducts();
+
+  // 섹션 헤더 폼에 채우기
+  document.getElementById('sh-tag').value   = sectionHeader.tag   || '';
+  document.getElementById('sh-title').value = sectionHeader.title || '';
+  document.getElementById('sh-desc').value  = sectionHeader.desc  || '';
+
+  // 계좌 정보 폼에 채우기
+  document.getElementById('b-bank').value    = bankInfo.bankName      || '';
+  document.getElementById('b-account').value = bankInfo.accountNumber || '';
+  document.getElementById('b-holder').value  = bankInfo.accountHolder || '';
+  document.getElementById('b-memo').value    = bankInfo.memo          || '';
+
+  renderList();
+  loadEditor(0);
+
+  // 이미지 압축 (canvas)
+  function compressImage(file, maxWidth = 1200, quality = 0.78) {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width, h = img.height;
+          if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // 썸네일 업로드
+  document.getElementById('thumb-input').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    newThumbBase64 = await compressImage(file);
+    const img = document.getElementById('thumb-preview');
+    img.src = newThumbBase64; img.style.display = 'block';
+    document.querySelector('.thumb-placeholder').style.display = 'none';
+  });
+
+  // 상세 이미지 업로드
+  document.getElementById('detail-img-input').addEventListener('change', async function(e) {
+    const files = Array.from(e.target.files);
+    for (const file of files) {
+      const compressed = await compressImage(file);
+      if (!products[currentIdx].detailImages) products[currentIdx].detailImages = [];
+      products[currentIdx].detailImages.push(compressed);
+    }
+    renderDetailImgs();
+    this.value = '';
+  });
+
+  // 가격 미리보기
+  ['f-price','f-discount'].forEach(id =>
+    document.getElementById(id).addEventListener('input', updateDiscPreview)
+  );
+}
+
+function renderList() {
+  document.getElementById('product-list').innerHTML = products.map((p, i) => `
+    <div class="product-item ${i === currentIdx ? 'active' : ''}" onclick="switchProduct(${i})">
+      <div class="p-thumb">
+        ${p.thumbImage ? `<img src="${p.thumbImage}" alt="">` : '📦'}
+      </div>
+      <div class="p-info">
+        <div class="p-name">${p.name || '(이름 없음)'}</div>
+        <div class="p-tag">${p.tag || ''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function switchProduct(idx) {
+  syncToProducts();
+  currentIdx = idx;
+  newThumbBase64 = null;
+  loadEditor(idx);
+}
+
+function loadEditor(idx) {
+  currentIdx = idx;
+  const p = products[idx];
+
+  document.getElementById('editor-title').textContent = p.name || '상품 편집';
+  document.getElementById('editor-sub').textContent = p.tag || '';
+  document.getElementById('f-name').value = p.name || '';
+  document.getElementById('f-tag').value = p.tag || '';
+  document.getElementById('f-unit').value = p.unit || '';
+  document.getElementById('f-price').value = p.price || '';
+  document.getElementById('f-discount').value = p.discountPrice || '';
+  document.getElementById('f-desc').value = p.desc || '';
+  [0,1,2,3].forEach(i => {
+    const el = document.getElementById(`f-feat-${i}`);
+    if (el) el.value = (p.features || [])[i] || '';
+  });
+
+  const img = document.getElementById('thumb-preview');
+  const ph = document.querySelector('.thumb-placeholder');
+  if (p.thumbImage) {
+    img.src = p.thumbImage; img.style.display = 'block'; ph.style.display = 'none';
+  } else {
+    img.src = ''; img.style.display = 'none'; ph.style.display = 'flex';
+  }
+
+  renderDetailImgs();
+  updateDiscPreview();
+  renderList();
+  document.querySelector('.main').scrollTop = 0;
+}
+
+function syncToProducts() {
+  const p = products[currentIdx];
+  p.name = document.getElementById('f-name').value.trim();
+  p.tag = document.getElementById('f-tag').value.trim();
+  p.unit = document.getElementById('f-unit').value.trim();
+  p.price = document.getElementById('f-price').value.trim();
+  p.discountPrice = document.getElementById('f-discount').value.trim();
+  p.desc = document.getElementById('f-desc').value.trim();
+  p.features = [0,1,2,3].map(i => document.getElementById(`f-feat-${i}`)?.value?.trim() || '').filter(Boolean);
+  if (newThumbBase64 !== null) p.thumbImage = newThumbBase64;
+}
+
+function removeThumb(e) {
+  e.stopPropagation();
+  newThumbBase64 = '';
+  products[currentIdx].thumbImage = '';
+  const img = document.getElementById('thumb-preview');
+  img.src = ''; img.style.display = 'none';
+  document.querySelector('.thumb-placeholder').style.display = 'flex';
+}
+
+function renderDetailImgs() {
+  const imgs = products[currentIdx].detailImages || [];
+  document.getElementById('detail-img-grid').innerHTML =
+    imgs.map((src, i) => `
+      <div class="dimg-item">
+        <img src="${src}" alt="상세 ${i+1}">
+        <button class="dimg-del" onclick="removeDetailImg(${i})">✕</button>
+      </div>
+    `).join('') + `
+    <div class="dimg-add" onclick="document.getElementById('detail-img-input').click()">
+      <span class="plus">+</span>
+      <div>이미지 추가</div>
+    </div>`;
+}
+
+function removeDetailImg(idx) {
+  products[currentIdx].detailImages.splice(idx, 1);
+  renderDetailImgs();
+}
+
+function updateDiscPreview() {
+  const price = parseInt(document.getElementById('f-price').value) || 0;
+  const disc  = parseInt(document.getElementById('f-discount').value) || 0;
+  const el = document.getElementById('disc-preview');
+  if (!price) { el.style.display = 'none'; return; }
+  let html = '';
+  if (disc && disc < price) {
+    const pct = Math.round((1 - disc / price) * 100);
+    html = `<s style="color:#aaa;margin-right:8px;">${price.toLocaleString()}원</s>
+            <strong style="color:var(--p);font-size:17px;">${disc.toLocaleString()}원</strong>
+            <span style="background:#e8f5e9;color:var(--pmid);font-size:12px;padding:2px 8px;border-radius:4px;margin-left:8px;">${pct}% 할인</span>`;
+  } else {
+    html = `<strong style="color:var(--p);font-size:17px;">${price.toLocaleString()}원</strong>`;
+  }
+  el.innerHTML = html;
+  el.style.display = 'block';
+}
+
+async function saveProducts() {
+  syncToProducts();
+
+  // 섹션 헤더 수집
+  sectionHeader = {
+    tag:   document.getElementById('sh-tag').value.trim(),
+    title: document.getElementById('sh-title').value.trim(),
+    desc:  document.getElementById('sh-desc').value.trim()
+  };
+
+  // 계좌 정보 수집
+  bankInfo = {
+    bankName:      document.getElementById('b-bank').value.trim(),
+    accountNumber: document.getElementById('b-account').value.trim(),
+    accountHolder: document.getElementById('b-holder').value.trim(),
+    memo:          document.getElementById('b-memo').value.trim()
+  };
+
+  const payload = { sectionHeader, bankInfo, products };
+
+  if (!IS_SERVER) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'products.json';
+    a.click();
+    showToast('products.json 다운로드 완료', 'success');
+    return;
+  }
+
+  const btn = document.getElementById('btn-save');
+  btn.textContent = '저장 중...'; btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/save-products', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (result.ok) {
+      showToast('✓ 저장 완료!', 'success');
+      renderList();
+    } else {
+      showToast('저장 실패: ' + result.message, 'error');
+    }
+  } catch(e) {
+    showToast('서버 연결 실패. node server.js 실행 확인', 'error');
+  }
+
+  btn.textContent = '저장하기'; btn.disabled = false;
+}
+
+function showToast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function defaultProducts() {
+  return [
+    { id:0, tag:'AGRICULTURE', name:'토양보습제', price:'', discountPrice:'', unit:'1kg',
+      desc:'최대 1,000배 수분 흡수력으로 가뭄을 해소하고 식물 생존율을 극대화합니다.',
+      features:['최대 1,000배 수분 흡수','골프장·사막 녹화 적용','수분·비료 동시 공급','실증테스트 성과 우수 (KAERI)'],
+      thumbImage:'', detailImages:[] },
+    { id:1, tag:'HYGIENE', name:'저독성 SAP', price:'', discountPrice:'', unit:'1kg',
+      desc:'아크릴산 잔류물을 혁신적으로 제거한 고흡수성수지(SAP)입니다.',
+      features:['아크릴산 불검출~200ppm 미만','기저귀·생리대 적용','피부 안전성 최우선','고흡수 성능 유지'],
+      thumbImage:'', detailImages:[] },
+    { id:2, tag:'INDUSTRIAL', name:'하이드로겔 솔루션', price:'', discountPrice:'', unit:'1kg',
+      desc:'나노 단위 고분자 하이드로겔 솔루션으로 다양한 산업 분야에 적용됩니다.',
+      features:['수경재배용 배지 적용','중금속 제거 기능','콘크리트 혼화제','흡습성 부직포 적용'],
+      thumbImage:'', detailImages:[] },
+    { id:3, tag:'ECO-FILM', name:'친환경 멀칭필름', price:'', discountPrice:'', unit:'1롤',
+      desc:'생분해성 멀칭필름으로 토양 수분 보존과 잡초 억제 효과를 동시에 제공합니다.',
+      features:['생분해·광분해 가능','토양 수분 증발 억제','잡초 억제 효과','수확 후 자연 분해'],
+      thumbImage:'', detailImages:[] },
+  ];
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SUNONE 관리자 페이지</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --admin-primary: #1a4a28;
+  --admin-accent: #5dbf78;
+  --admin-bg: #f4f6f4;
+  --admin-white: #ffffff;
+  --admin-border: #dde8dd;
+  --admin-text: #1a2018;
+  --admin-muted: #6b7a6b;
+  --admin-danger: #c0392b;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--admin-bg); color: var(--admin-text); font-size: 14px; }
+
+/* 레이아웃 */
+.admin-wrap { display: flex; min-height: 100vh; }
+
+/* 사이드바 */
+.sidebar {
+  width: 220px; flex-shrink: 0;
+  background: var(--admin-primary); color: white;
+  position: fixed; top: 0; left: 0; bottom: 0;
+  display: flex; flex-direction: column;
+  z-index: 100;
+}
+.sidebar-logo {
+  padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-size: 18px; font-weight: 700; letter-spacing: 1px;
+}
+.sidebar-logo span { font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.5); display: block; margin-top: 4px; }
+.sidebar-nav { flex: 1; padding: 16px 0; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 20px; color: rgba(255,255,255,0.7);
+  cursor: pointer; transition: background 0.2s, color 0.2s;
+  font-size: 13px;
+}
+.nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); color: white; }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+.btn-preview {
+  display: block; text-align: center;
+  background: var(--admin-accent); color: var(--admin-primary);
+  padding: 9px; border-radius: 6px; text-decoration: none;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+  transition: background 0.2s;
+}
+.btn-preview:hover { background: #7dd99a; }
+
+/* 메인 콘텐츠 */
+.main-content {
+  margin-left: 220px; flex: 1;
+  padding: 32px 40px;
+  max-width: calc(100vw - 220px);
+}
+.page-header { margin-bottom: 28px; }
+.page-title { font-size: 22px; font-weight: 700; color: var(--admin-primary); }
+.page-subtitle { font-size: 13px; color: var(--admin-muted); margin-top: 4px; }
+
+/* 섹션 카드 */
+.card {
+  background: var(--admin-white); border-radius: 10px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  margin-bottom: 24px; overflow: hidden;
+}
+.card-header {
+  padding: 16px 24px; border-bottom: 1px solid var(--admin-border);
+  display: flex; align-items: center; gap: 10px;
+}
+.card-title { font-size: 15px; font-weight: 700; color: var(--admin-primary); }
+.card-icon { font-size: 18px; }
+.card-body { padding: 24px; }
+
+/* 폼 */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; }
+.form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-grid.cols-1 { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+label { font-size: 12px; font-weight: 700; color: var(--admin-primary); letter-spacing: 0.3px; }
+.required::after { content: ' *'; color: var(--admin-danger); }
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="url"],
+textarea {
+  border: 1px solid var(--admin-border); border-radius: 6px;
+  padding: 9px 12px; font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px; color: var(--admin-text);
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fafcfa;
+}
+input:focus, textarea:focus {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px rgba(93,191,120,0.15);
+  background: white;
+}
+textarea { resize: vertical; min-height: 80px; }
+
+/* 컬러 피커 */
+.color-row { display: flex; align-items: center; gap: 12px; }
+.color-preview {
+  width: 40px; height: 40px; border-radius: 8px;
+  border: 1px solid var(--admin-border); flex-shrink: 0;
+  transition: background 0.2s;
+}
+input[type="color"] {
+  width: 40px; height: 40px; border: 1px solid var(--admin-border);
+  border-radius: 8px; padding: 2px; cursor: pointer; background: white;
+  flex-shrink: 0;
+}
+.color-hex {
+  border: 1px solid var(--admin-border); border-radius: 6px;
+  padding: 9px 12px; font-size: 13px; width: 110px;
+  font-family: monospace; background: #fafcfa; outline: none;
+  transition: border-color 0.2s;
+}
+.color-hex:focus { border-color: var(--admin-accent); background: white; }
+.color-label-wrap { display: flex; flex-direction: column; gap: 8px; }
+.color-name { font-size: 12px; color: var(--admin-muted); }
+
+/* 이미지 업로드 */
+.upload-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.upload-item { display: flex; flex-direction: column; gap: 8px; }
+.upload-label { font-size: 12px; font-weight: 700; color: var(--admin-primary); }
+.upload-zone {
+  border: 2px dashed var(--admin-border); border-radius: 8px;
+  aspect-ratio: 4/3; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer; transition: border-color 0.2s, background 0.2s;
+  overflow: hidden; position: relative; background: #fafcfa;
+}
+.upload-zone:hover { border-color: var(--admin-accent); background: #f0faf3; }
+.upload-zone .icon { font-size: 24px; }
+.upload-zone .hint { font-size: 11px; color: var(--admin-muted); }
+.upload-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  width: 100%; height: 100%;
+  z-index: 3;
+}
+.upload-zone img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  z-index: 1;
+}
+.upload-zone .remove-btn {
+  position: absolute; top: 6px; right: 6px;
+  background: rgba(0,0,0,0.5); color: white;
+  border: none; border-radius: 50%; width: 22px; height: 22px;
+  font-size: 12px; cursor: pointer; display: none;
+  align-items: center; justify-content: center;
+  z-index: 4;
+}
+.upload-zone:hover .remove-btn { display: flex; }
+
+/* 히어로 문구 입력칸 */
+.hero-input-wrap { display: flex; flex-direction: column; gap: 20px; }
+.hero-field { display: flex; flex-direction: column; gap: 8px; }
+.hero-field label {
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  color: var(--admin-muted); text-transform: uppercase;
+}
+.hero-field .field-hint {
+  font-size: 11px; color: #aab5aa; margin-top: -4px;
+}
+.hero-input-t1 {
+  border: 2px solid var(--admin-border); border-radius: 8px;
+  padding: 14px 16px; width: 100%; outline: none;
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
+  font-size: 28px; color: var(--admin-primary);
+  background: #f7fcf8; transition: border-color 0.2s, box-shadow 0.2s;
+  letter-spacing: -0.5px;
+}
+.hero-input-t2 {
+  border: 2px solid var(--admin-border); border-radius: 8px;
+  padding: 12px 16px; width: 100%; outline: none;
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
+  font-size: 22px; color: #2d6a41;
+  background: #f7fcf8; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.hero-input-sub {
+  border: 1px solid var(--admin-border); border-radius: 6px;
+  padding: 10px 14px; width: 100%; outline: none;
+  font-family: 'Courier New', monospace;
+  font-size: 14px; color: var(--admin-muted);
+  background: #fafcfa; transition: border-color 0.2s;
+  letter-spacing: 0.5px;
+}
+.hero-input-t1:focus, .hero-input-t2:focus {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px rgba(93,191,120,0.15);
+  background: white;
+}
+.hero-input-sub:focus { border-color: var(--admin-accent); background: white; }
+
+/* SNS */
+.sns-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; }
+.sns-item { display: flex; align-items: center; gap: 10px; }
+.sns-icon { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
+.sns-input-wrap { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.sns-input-wrap label { font-size: 11px; font-weight: 700; color: var(--admin-muted); }
+
+/* 저장 버튼 영역 */
+.save-bar {
+  position: fixed; bottom: 0; left: 220px; right: 0;
+  background: white; border-top: 1px solid var(--admin-border);
+  padding: 16px 40px; display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.06); z-index: 50;
+}
+.save-msg { font-size: 13px; color: var(--admin-muted); }
+.save-msg.success { color: #2d6a41; font-weight: 700; }
+.save-msg.error { color: var(--admin-danger); font-weight: 700; }
+.save-btns { display: flex; gap: 12px; }
+.btn {
+  padding: 10px 24px; border-radius: 6px; font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer; border: none;
+  transition: background 0.2s, transform 0.15s;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn-secondary-outline {
+  background: white; color: var(--admin-primary);
+  border: 1px solid var(--admin-border);
+}
+.btn-secondary-outline:hover { border-color: var(--admin-accent); background: #f0faf3; }
+.btn-save {
+  background: var(--admin-primary); color: white;
+  padding: 10px 32px;
+}
+.btn-save:hover { background: #0f2e1a; }
+
+/* 안내 배너 */
+.info-banner {
+  background: #f0faf3; border: 1px solid #c8eed4; border-radius: 8px;
+  padding: 12px 16px; font-size: 12px; color: #2d6a41;
+  margin-bottom: 24px; display: flex; align-items: flex-start; gap: 8px;
+}
+.info-banner .icon { flex-shrink: 0; font-size: 14px; }
+
+/* 하단 여백 (저장 바 높이만큼) */
+.content-pad { height: 80px; }
+
+/* 토스트 알림 */
+.toast {
+  position: fixed; top: 24px; right: 24px; z-index: 9999;
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px; border-radius: 10px;
+  font-size: 14px; font-weight: 600;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  transform: translateY(-12px); opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+.toast.success { background: #1a4a28; color: white; }
+.toast.error   { background: #c0392b; color: white; }
+.toast-icon { font-size: 20px; }
+.toast-close {
+  margin-left: 8px; background: none; border: none;
+  color: rgba(255,255,255,0.7); font-size: 16px; cursor: pointer;
+  line-height: 1; padding: 0;
+}
+
+/* 반응형 */
+@media (max-width: 1024px) {
+  .main-content { padding: 24px 24px; }
+  .form-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+  .upload-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 768px) {
+  .sidebar { width: 60px; }
+  .sidebar-logo, .nav-item span, .sidebar-footer { display: none; }
+  .nav-item { justify-content: center; padding: 14px; }
+  .main-content { margin-left: 60px; padding: 20px 16px; }
+  .save-bar { left: 60px; padding: 12px 16px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid.cols-3 { grid-template-columns: 1fr; }
+  .upload-grid { grid-template-columns: 1fr 1fr; }
+  .sns-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 375px) {
+  .main-content { padding: 16px 12px; }
+  .card-body { padding: 16px; }
+  .upload-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="admin-wrap">
+
+  <!-- 사이드바 -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      SUNONE
+      <span>관리자 페이지</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-section="basic">
+        <span class="icon">🏢</span>
+        <span>기본 정보</span>
+      </div>
+      <div class="nav-item" data-section="header">
+        <span class="icon">🔝</span>
+        <span>헤더 설정</span>
+      </div>
+      <div class="nav-item" data-section="design">
+        <span class="icon">🎨</span>
+        <span>디자인 설정</span>
+      </div>
+      <div class="nav-item" data-section="typo">
+        <span class="icon">🔤</span>
+        <span>타이포그래피</span>
+      </div>
+      <div class="nav-item" data-section="images">
+        <span class="icon">🖼️</span>
+        <span>이미지</span>
+      </div>
+      <div class="nav-item" data-section="hero">
+        <span class="icon">✏️</span>
+        <span>히어로 문구</span>
+      </div>
+      <div class="nav-item" data-section="about">
+        <span class="icon">🏢</span>
+        <span>About 섹션</span>
+      </div>
+      <div class="nav-item" data-section="greeting">
+        <span class="icon">💬</span>
+        <span>대표자 인사말</span>
+      </div>
+      <div class="nav-item" data-section="sns">
+        <span class="icon">🔗</span>
+        <span>SNS 링크</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="sunone_homepage.html" target="_blank" class="btn-preview">홈페이지 미리보기</a>
+    </div>
+  </aside>
+
+  <!-- 메인 -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">홈페이지 관리</h1>
+      <p class="page-subtitle">변경 사항은 저장하기 버튼을 눌러야 홈페이지에 반영됩니다.</p>
+    </div>
+
+    <div class="info-banner">
+      <span class="icon">ℹ️</span>
+      <span>VS Code 터미널에서 <code>node server.js</code> 실행 후 <strong>http://localhost:3000/admin.html</strong> 로 접속하면 저장하기 버튼으로 <code>company.json</code>이 직접 저장됩니다. 파일을 직접 열었을 경우에는 JSON 내보내기를 사용하세요.</span>
+    </div>
+
+    <!-- 기본 정보 -->
+    <div class="card" id="section-basic">
+      <div class="card-header">
+        <span class="card-icon">🏢</span>
+        <h2 class="card-title">회사 기본 정보</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="required" for="f-name">회사명</label>
+            <input type="text" id="f-name" placeholder="주식회사 썬원">
+          </div>
+          <div class="form-group">
+            <label class="required" for="f-rep">대표자</label>
+            <input type="text" id="f-rep" placeholder="홍길동">
+          </div>
+          <div class="form-group">
+            <label for="f-biz">사업자번호</label>
+            <input type="text" id="f-biz" placeholder="000-00-00000">
+          </div>
+          <div class="form-group">
+            <label for="f-phone">전화번호</label>
+            <input type="tel" id="f-phone" placeholder="031-000-0000">
+          </div>
+          <div class="form-group full">
+            <label class="required" for="f-addr">주소</label>
+            <input type="text" id="f-addr" placeholder="경기도 화성시 팔탄면 밤뒤길 104">
+          </div>
+          <div class="form-group full">
+            <label for="f-email">이메일</label>
+            <input type="email" id="f-email" placeholder="contact@sunone.co.kr">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 헤더 설정 -->
+    <div class="card" id="section-header">
+      <div class="card-header">
+        <span class="card-icon">🔝</span>
+        <h2 class="card-title">헤더 설정</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>헤더 배경색</label>
+            <div class="color-row">
+              <input type="color" id="c-header-picker" value="#0f2e1a">
+              <input type="text" class="color-hex" id="c-header-hex" value="" maxlength="7" placeholder="#0f2e1a (비우면 투명)">
+              <div class="color-preview" id="c-header-preview" style="background:#0f2e1a"></div>
+              <div class="color-label-wrap">
+                <span class="color-name">헤더 고정 배경색<br>배경이미지 등록 시 무시됨</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>헤더 배경 이미지</label>
+            <div class="upload-zone" id="upload-header-bg" style="max-width:260px;">
+              <span class="icon">🖼️</span>
+              <span class="hint">클릭하여 업로드<br>권장: 가로형 저용량 이미지</span>
+              <input type="file" accept="image/*" data-key="헤더배경이미지">
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:20px;">
+          <label style="font-size:12px;font-weight:600;color:#444;letter-spacing:0.5px;display:block;margin-bottom:10px;">네비게이션 메뉴 텍스트 (비우면 해당 메뉴 숨김)</label>
+          <div class="form-grid">
+            <div class="form-group"><label>메뉴 1</label><input type="text" id="f-nav-1" placeholder="회사소개"></div>
+            <div class="form-group"><label>메뉴 2</label><input type="text" id="f-nav-2" placeholder="핵심기술"></div>
+            <div class="form-group"><label>메뉴 3</label><input type="text" id="f-nav-3" placeholder="주요제품"></div>
+            <div class="form-group"><label>메뉴 4</label><input type="text" id="f-nav-4" placeholder="글로벌파트너"></div>
+            <div class="form-group"><label>메뉴 5</label><input type="text" id="f-nav-5" placeholder="회사연혁"></div>
+            <div class="form-group"><label>메뉴 6 (버튼)</label><input type="text" id="f-nav-6" placeholder="문의하기"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 디자인 설정 -->
+    <div class="card" id="section-design">
+      <div class="card-header">
+        <span class="card-icon">🎨</span>
+        <h2 class="card-title">디자인 설정</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>메인 컬러</label>
+            <div class="color-row">
+              <input type="color" id="c-main-picker" value="#1a4a28">
+              <input type="text" class="color-hex" id="c-main-hex" value="#1a4a28" maxlength="7" placeholder="#1a4a28">
+              <div class="color-preview" id="c-main-preview" style="background:#1a4a28"></div>
+              <div class="color-label-wrap">
+                <span class="color-name">헤더·푸터·배경 등<br>주요 색상</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>보조 컬러</label>
+            <div class="color-row">
+              <input type="color" id="c-sub-picker" value="#5dbf78">
+              <input type="text" class="color-hex" id="c-sub-hex" value="#5dbf78" maxlength="7" placeholder="#5dbf78">
+              <div class="color-preview" id="c-sub-preview" style="background:#5dbf78"></div>
+              <div class="color-label-wrap">
+                <span class="color-name">버튼·강조·아이콘<br>포인트 색상</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>기술 섹션 배경색</label>
+            <div class="color-row">
+              <input type="color" id="c-tech-picker" value="#232a3d">
+              <input type="text" class="color-hex" id="c-tech-hex" value="#232a3d" maxlength="7" placeholder="#232a3d">
+              <div class="color-preview" id="c-tech-preview" style="background:#232a3d"></div>
+              <div class="color-label-wrap">
+                <span class="color-name">Core Technology<br>섹션 배경</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>연락처 섹션 배경색</label>
+            <div class="color-row">
+              <input type="color" id="c-contact-picker" value="#367a4d">
+              <input type="text" class="color-hex" id="c-contact-hex" value="#367a4d" maxlength="7" placeholder="#367a4d">
+              <div class="color-preview" id="c-contact-preview" style="background:#367a4d"></div>
+              <div class="color-label-wrap">
+                <span class="color-name">Contact<br>섹션 배경</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 타이포그래피 -->
+    <div class="card" id="section-typo">
+      <div class="card-header">
+        <span class="card-icon">🔤</span>
+        <h2 class="card-title">타이포그래피</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="f-font-heading">제목 폰트</label>
+            <select id="f-font-heading">
+              <option value="'Cormorant Garamond', serif">Cormorant Garamond (현재 기본)</option>
+              <option value="'Noto Serif KR', serif">Noto Serif KR (한국어 명조)</option>
+              <option value="'Black Han Sans', sans-serif">Black Han Sans (한국어 굵은 고딕)</option>
+              <option value="'Noto Sans KR', sans-serif">Noto Sans KR (한국어 고딕)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="f-font-body">본문 폰트</label>
+            <select id="f-font-body">
+              <option value="'Sora', sans-serif">Sora (현재 기본)</option>
+              <option value="'Noto Sans KR', sans-serif">Noto Sans KR (한국어 고딕)</option>
+              <option value="'Gowun Dodum', sans-serif">Gowun Dodum (둥근 고딕)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>섹션 제목 크기: <strong id="typo-title-val">44</strong>px</label>
+            <input type="range" id="f-title-size" min="28" max="60" value="44"
+              oninput="document.getElementById('typo-title-val').textContent=this.value">
+          </div>
+          <div class="form-group">
+            <label>본문 텍스트 크기: <strong id="typo-body-val">16</strong>px</label>
+            <input type="range" id="f-body-size" min="13" max="22" value="16"
+              oninput="document.getElementById('typo-body-val').textContent=this.value">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 이미지 -->
+    <div class="card" id="section-images">
+      <div class="card-header">
+        <span class="card-icon">🖼️</span>
+        <h2 class="card-title">이미지 업로드</h2>
+      </div>
+      <div class="card-body">
+        <div class="upload-grid">
+          <div class="upload-item">
+            <span class="upload-label">로고</span>
+            <div class="upload-zone" id="upload-logo">
+              <span class="icon">🏷️</span>
+              <span class="hint">클릭하여 업로드<br>권장: PNG 투명배경</span>
+              <input type="file" accept="image/*" data-key="로고">
+              <button class="remove-btn" data-target="upload-logo">✕</button>
+            </div>
+          </div>
+          <div class="upload-item">
+            <span class="upload-label">메인 배너</span>
+            <div class="upload-zone" id="upload-banner">
+              <span class="icon">🌄</span>
+              <span class="hint">클릭하여 업로드<br>권장: 1920×1080</span>
+              <input type="file" accept="image/*" data-key="메인배너">
+              <button class="remove-btn" data-target="upload-banner">✕</button>
+            </div>
+          </div>
+          <div class="upload-item">
+            <span class="upload-label">대표자 사진</span>
+            <div class="upload-zone" id="upload-ceo">
+              <span class="icon">👤</span>
+              <span class="hint">클릭하여 업로드<br>권장: 정방형</span>
+              <input type="file" accept="image/*" data-key="대표자사진">
+              <button class="remove-btn" data-target="upload-ceo">✕</button>
+            </div>
+          </div>
+          <div class="upload-item">
+            <span class="upload-label">회사소개 이미지</span>
+            <div class="upload-zone" id="upload-about">
+              <span class="icon">🏭</span>
+              <span class="hint">클릭하여 업로드<br>권장: 4:3 비율</span>
+              <input type="file" accept="image/*" data-key="회사소개이미지">
+              <button class="remove-btn" data-target="upload-about">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--admin-border);">
+          <p style="font-size:13px; font-weight:700; color:var(--admin-primary); margin-bottom:16px;">제품 이미지</p>
+          <div class="upload-grid">
+            <div class="upload-item">
+              <span class="upload-label">제품 1 — 토양보습제</span>
+              <div class="upload-zone" id="upload-product1">
+                <span class="icon">🌱</span>
+                <span class="hint">클릭하여 업로드<br>권장: 3:2 비율</span>
+                <input type="file" accept="image/*" data-key="제품1이미지">
+                <button class="remove-btn" data-target="upload-product1">✕</button>
+              </div>
+            </div>
+            <div class="upload-item">
+              <span class="upload-label">제품 2 — 저독성 SAP</span>
+              <div class="upload-zone" id="upload-product2">
+                <span class="icon">🧪</span>
+                <span class="hint">클릭하여 업로드<br>권장: 3:2 비율</span>
+                <input type="file" accept="image/*" data-key="제품2이미지">
+                <button class="remove-btn" data-target="upload-product2">✕</button>
+              </div>
+            </div>
+            <div class="upload-item">
+              <span class="upload-label">제품 3 — 하이드로겔</span>
+              <div class="upload-zone" id="upload-product3">
+                <span class="icon">💧</span>
+                <span class="hint">클릭하여 업로드<br>권장: 3:2 비율</span>
+                <input type="file" accept="image/*" data-key="제품3이미지">
+                <button class="remove-btn" data-target="upload-product3">✕</button>
+              </div>
+            </div>
+            <div class="upload-item">
+              <span class="upload-label">제품 4 — 멀칭필름</span>
+              <div class="upload-zone" id="upload-product4">
+                <span class="icon">🌿</span>
+                <span class="hint">클릭하여 업로드<br>권장: 3:2 비율</span>
+                <input type="file" accept="image/*" data-key="제품4이미지">
+                <button class="remove-btn" data-target="upload-product4">✕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 히어로 문구 -->
+    <div class="card" id="section-hero">
+      <div class="card-header">
+        <span class="card-icon">✏️</span>
+        <h2 class="card-title">히어로 문구 (메인 배너 텍스트)</h2>
+      </div>
+      <div class="card-body">
+        <div class="hero-input-wrap">
+          <div class="hero-field">
+            <label>타이틀 1</label>
+            <p class="field-hint">강조할 단어는 [대괄호]로 감싸면 녹색으로 표시됩니다 — 예: 지구를 [녹색]으로</p>
+            <input type="text" class="hero-input-t1" id="f-hero-t1" placeholder="지구를 [녹색]으로">
+          </div>
+          <div class="hero-field">
+            <label>타이틀 2</label>
+            <p class="field-hint">강조할 단어는 [대괄호]로 감싸면 녹색으로 표시됩니다 — 예: 인류를 [건강]하게</p>
+            <input type="text" class="hero-input-t2" id="f-hero-t2" placeholder="인류를 [건강]하게">
+          </div>
+          <div class="hero-field">
+            <label>배지 텍스트</label>
+            <input type="text" class="hero-input-sub" id="f-hero-badge" placeholder="한국원자력연구원 패밀리기업 · KAERI Family Company">
+          </div>
+          <div class="hero-field">
+            <label>영문 부제</label>
+            <input type="text" class="hero-input-sub" id="f-hero-sub" placeholder="SUNONE Co., Ltd — Electron Beam Technology">
+          </div>
+          <div class="form-group">
+            <label for="f-hero-desc">소개 텍스트</label>
+            <textarea id="f-hero-desc" rows="3" placeholder="세계 최초 전자선 조사 기술로 친환경 하이드로겔 및 고흡수성수지(SAP)의 새로운 표준을 만들어 갑니다."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- About 섹션 -->
+    <div class="card" id="section-about">
+      <div class="card-header">
+        <span class="card-icon">🏢</span>
+        <h2 class="card-title">About 섹션</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-grid cols-1">
+          <div class="form-group">
+            <label for="f-about-label">섹션 라벨 (상단 작은 텍스트)</label>
+            <input type="text" id="f-about-label" placeholder="About SUNONE">
+          </div>
+          <div class="form-group">
+            <label for="f-about-title">제목</label>
+            <p class="field-hint">강조할 단어는 [대괄호]로 감싸면 녹색으로 표시됩니다 — 예: [글로벌 선두주자]</p>
+            <input type="text" id="f-about-title" placeholder="친환경 소재 기술의 [글로벌 선두주자]">
+          </div>
+          <div class="form-group">
+            <label for="f-about-desc">본문 설명</label>
+            <textarea id="f-about-desc" rows="4" placeholder="회사 소개 본문을 입력하세요."></textarea>
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <label style="font-size:12px;font-weight:600;color:#444;letter-spacing:0.5px;display:block;margin-bottom:10px;">태그 (빈 칸은 숨겨짐)</label>
+          <div class="form-grid">
+            <div class="form-group"><input type="text" id="f-about-tag1" placeholder="🔬 세계 최초 원천기술"></div>
+            <div class="form-group"><input type="text" id="f-about-tag2" placeholder="🌱 생분해·광분해 가능"></div>
+            <div class="form-group"><input type="text" id="f-about-tag3" placeholder="⚡ 상온 고속 대량생산"></div>
+            <div class="form-group"><input type="text" id="f-about-tag4" placeholder="🤝 한국원자력연구원 협력"></div>
+            <div class="form-group"><input type="text" id="f-about-tag5" placeholder="🌍 글로벌 파트너십"></div>
+            <div class="form-group"><input type="text" id="f-about-tag6" placeholder="📋 국내외 특허 진행 중"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 대표자 인사말 -->
+    <div class="card" id="section-greeting">
+      <div class="card-header">
+        <span class="card-icon">💬</span>
+        <h2 class="card-title">대표자 인사말</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-grid cols-1">
+          <div class="form-group">
+            <label for="f-greet-title">인사말 제목</label>
+            <input type="text" id="f-greet-title" placeholder="더 나은 내일을 위한 혁신">
+          </div>
+          <div class="form-group">
+            <label for="f-greet-body">인사말 본문</label>
+            <textarea id="f-greet-body" rows="5" placeholder="인사말 내용을 입력하세요."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SNS 링크 -->
+    <div class="card" id="section-sns">
+      <div class="card-header">
+        <span class="card-icon">🔗</span>
+        <h2 class="card-title">SNS 링크</h2>
+      </div>
+      <div class="card-body">
+        <div class="sns-grid">
+          <div class="sns-item">
+            <span class="sns-icon">💬</span>
+            <div class="sns-input-wrap">
+              <label for="f-kakao">카카오 채널</label>
+              <input type="url" id="f-kakao" placeholder="https://pf.kakao.com/...">
+            </div>
+          </div>
+          <div class="sns-item">
+            <span class="sns-icon">📸</span>
+            <div class="sns-input-wrap">
+              <label for="f-insta">인스타그램</label>
+              <input type="url" id="f-insta" placeholder="https://instagram.com/...">
+            </div>
+          </div>
+          <div class="sns-item">
+            <span class="sns-icon">▶️</span>
+            <div class="sns-input-wrap">
+              <label for="f-yt">유튜브</label>
+              <input type="url" id="f-yt" placeholder="https://youtube.com/@...">
+            </div>
+          </div>
+          <div class="sns-item">
+            <span class="sns-icon">📝</span>
+            <div class="sns-input-wrap">
+              <label for="f-blog">네이버 블로그</label>
+              <input type="url" id="f-blog" placeholder="https://blog.naver.com/...">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-pad"></div>
+  </main>
+</div>
+
+<!-- 토스트 알림 -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon"></span>
+  <span id="toast-text"></span>
+  <button class="toast-close" id="toast-close">✕</button>
+</div>
+
+<!-- 저장 바 -->
+<div class="save-bar">
+  <span class="save-msg" id="save-msg">변경 사항이 있으면 저장하세요.</span>
+  <div class="save-btns">
+    <button class="btn btn-secondary-outline" id="btn-export">JSON 내보내기</button>
+    <button class="btn btn-save" id="btn-save">저장하기</button>
+  </div>
+</div>
+
+<script>
+// 필드 매핑
+const FIELDS = {
+  '회사명':           'f-name',
+  '대표자':           'f-rep',
+  '사업자번호':        'f-biz',
+  '전화번호':         'f-phone',
+  '주소':             'f-addr',
+  '이메일':           'f-email',
+  '헤더배경색':        'c-header-hex',
+  '네비메뉴1':         'f-nav-1',
+  '네비메뉴2':         'f-nav-2',
+  '네비메뉴3':         'f-nav-3',
+  '네비메뉴4':         'f-nav-4',
+  '네비메뉴5':         'f-nav-5',
+  '네비메뉴6':         'f-nav-6',
+  '메인컬러':         'c-main-hex',
+  '보조컬러':         'c-sub-hex',
+  '기술배경색':       'c-tech-hex',
+  '연락처배경색':     'c-contact-hex',
+  '히어로배지':        'f-hero-badge',
+  '히어로타이틀1':    'f-hero-t1',
+  '히어로타이틀2':    'f-hero-t2',
+  '히어로부제':       'f-hero-sub',
+  '히어로본문':       'f-hero-desc',
+  '대표자인사말제목':  'f-greet-title',
+  '대표자인사말내용':  'f-greet-body',
+  '카카오':           'f-kakao',
+  '인스타그램':        'f-insta',
+  '유튜브':           'f-yt',
+  '네이버블로그':      'f-blog',
+  '어바웃라벨':        'f-about-label',
+  '어바웃제목':        'f-about-title',
+  '어바웃본문':        'f-about-desc',
+  '어바웃태그1':       'f-about-tag1',
+  '어바웃태그2':       'f-about-tag2',
+  '어바웃태그3':       'f-about-tag3',
+  '어바웃태그4':       'f-about-tag4',
+  '어바웃태그5':       'f-about-tag5',
+  '어바웃태그6':       'f-about-tag6',
+};
+
+// 이미지 데이터 (base64)
+const imageData = {};
+
+// 현재 데이터 수집
+function collectData() {
+  const d = {};
+  for (const [key, id] of Object.entries(FIELDS)) {
+    d[key] = document.getElementById(id)?.value?.trim() || '';
+  }
+  // 타이포그래피 (select/range)
+  d.폰트제목 = document.getElementById('f-font-heading')?.value || '';
+  d.폰트본문 = document.getElementById('f-font-body')?.value || '';
+  d.제목크기 = document.getElementById('f-title-size')?.value || '';
+  d.본문크기 = document.getElementById('f-body-size')?.value || '';
+  Object.assign(d, imageData);
+  return d;
+}
+
+// 폼에 데이터 채우기
+function fillForm(d) {
+  for (const [key, id] of Object.entries(FIELDS)) {
+    const el = document.getElementById(id);
+    if (el && d[key] !== undefined) el.value = d[key];
+  }
+  if (d.헤더배경색) {
+    document.getElementById('c-header-picker').value = d.헤더배경색;
+    document.getElementById('c-header-preview').style.background = d.헤더배경색;
+  }
+  if (d.메인컬러) {
+    document.getElementById('c-main-picker').value = d.메인컬러;
+    document.getElementById('c-main-preview').style.background = d.메인컬러;
+  }
+  if (d.보조컬러) {
+    document.getElementById('c-sub-picker').value = d.보조컬러;
+    document.getElementById('c-sub-preview').style.background = d.보조컬러;
+  }
+  if (d.기술배경색) {
+    document.getElementById('c-tech-picker').value = d.기술배경색;
+    document.getElementById('c-tech-preview').style.background = d.기술배경색;
+  }
+  if (d.연락처배경색) {
+    document.getElementById('c-contact-picker').value = d.연락처배경색;
+    document.getElementById('c-contact-preview').style.background = d.연락처배경색;
+  }
+
+  // 타이포그래피 복원
+  if (d.폰트제목) {
+    const sel = document.getElementById('f-font-heading');
+    if (sel) sel.value = d.폰트제목;
+  }
+  if (d.폰트본문) {
+    const sel = document.getElementById('f-font-body');
+    if (sel) sel.value = d.폰트본문;
+  }
+  if (d.제목크기) {
+    const r = document.getElementById('f-title-size');
+    if (r) { r.value = d.제목크기; document.getElementById('typo-title-val').textContent = d.제목크기; }
+  }
+  if (d.본문크기) {
+    const r = document.getElementById('f-body-size');
+    if (r) { r.value = d.본문크기; document.getElementById('typo-body-val').textContent = d.본문크기; }
+  }
+
+  // 저장된 이미지 복원
+  const imgKeys = ['로고','헤더배경이미지','메인배너','대표자사진','회사소개이미지','제품1이미지','제품2이미지','제품3이미지','제품4이미지'];
+  const zoneIds = {
+    '로고':          'upload-logo',
+    '헤더배경이미지':  'upload-header-bg',
+    '메인배너':       'upload-banner',
+    '대표자사진':     'upload-ceo',
+    '회사소개이미지':  'upload-about',
+    '제품1이미지':    'upload-product1',
+    '제품2이미지':    'upload-product2',
+    '제품3이미지':    'upload-product3',
+    '제품4이미지':    'upload-product4',
+  };
+  imgKeys.forEach(key => {
+    if (d[key]) {
+      imageData[key] = d[key];
+      showImagePreview(zoneIds[key], d[key]);
+    }
+  });
+}
+
+// 로컬 서버 환경인지 확인
+const IS_SERVER = location.protocol === 'http:' && location.hostname === 'localhost';
+
+// 상태 메시지 표시
+// 토스트 알림
+let toastTimer;
+function showToast(text, type) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = type === 'success' ? '✓' : '✗';
+  document.getElementById('toast-text').textContent = text;
+  toast.className = 'toast ' + type + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3500);
+}
+document.getElementById('toast-close').addEventListener('click', () => {
+  document.getElementById('toast').classList.remove('show');
+  clearTimeout(toastTimer);
+});
+
+function showMsg(text, type, duration) {
+  const msg = document.getElementById('save-msg');
+  msg.textContent = text;
+  msg.className = 'save-msg ' + (type || '');
+  if (duration) setTimeout(() => {
+    msg.textContent = IS_SERVER ? '변경 사항이 있으면 저장하세요.' : '서버 미실행 — JSON 내보내기를 사용하세요.';
+    msg.className = 'save-msg';
+  }, duration);
+}
+
+// 초기 로드 (캐시 무시, localStorage 구 데이터 제거)
+async function init() {
+  localStorage.removeItem('sunone_company');
+  let data;
+  try {
+    const res = await fetch('company.json?t=' + Date.now());
+    if (res.ok) data = await res.json();
+  } catch(e) {}
+  if (data) fillForm(data);
+
+  if (!IS_SERVER) {
+    showMsg('⚠ 서버 미실행 — node server.js 후 localhost:3000 에서 접속하세요.', 'error');
+    document.getElementById('btn-save').disabled = true;
+    document.getElementById('btn-save').style.opacity = '0.4';
+    document.getElementById('btn-save').style.cursor = 'not-allowed';
+  }
+}
+init();
+
+// 저장 (서버로 POST)
+document.getElementById('btn-save').addEventListener('click', async () => {
+  const data = collectData();
+  try {
+    const res = await fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (result.ok) {
+      showMsg('✓ 저장 완료', 'success', 4000);
+      showToast('company.json 저장 완료!', 'success');
+    } else {
+      showMsg('✗ 저장 실패: ' + result.message, 'error', 5000);
+      showToast('저장 실패: ' + result.message, 'error');
+    }
+  } catch(e) {
+    showMsg('✗ 서버 연결 실패', 'error', 5000);
+    showToast('서버 연결 실패 — node server.js 실행 확인', 'error');
+  }
+});
+
+// JSON 내보내기 (서버 없을 때 대체 수단)
+document.getElementById('btn-export').addEventListener('click', () => {
+  const data = collectData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'company.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+// 컬러 피커 동기화
+function syncColor(pickerId, hexId, previewId) {
+  const picker = document.getElementById(pickerId);
+  const hex = document.getElementById(hexId);
+  const preview = document.getElementById(previewId);
+
+  picker.addEventListener('input', () => {
+    hex.value = picker.value;
+    preview.style.background = picker.value;
+  });
+  hex.addEventListener('input', () => {
+    const val = hex.value;
+    if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+      picker.value = val;
+      preview.style.background = val;
+    }
+  });
+}
+syncColor('c-header-picker', 'c-header-hex', 'c-header-preview');
+syncColor('c-main-picker', 'c-main-hex', 'c-main-preview');
+syncColor('c-sub-picker', 'c-sub-hex', 'c-sub-preview');
+syncColor('c-tech-picker', 'c-tech-hex', 'c-tech-preview');
+syncColor('c-contact-picker', 'c-contact-hex', 'c-contact-preview');
+
+// 이미지 업로드
+function showImagePreview(zoneId, src) {
+  const zone = document.getElementById(zoneId);
+  zone.querySelectorAll('.icon, .hint').forEach(el => el.style.display = 'none');
+  let img = zone.querySelector('img');
+  if (!img) {
+    img = document.createElement('img');
+    img.alt = '미리보기';
+    // file input 앞에 삽입해서 input이 항상 위에 오도록 유지
+    const fileInput = zone.querySelector('input[type="file"]');
+    zone.insertBefore(img, fileInput);
+  }
+  img.src = src;
+}
+
+// 이미지 압축 (canvas, 최대 1400px, 품질 0.78)
+function compressImage(file, maxWidth = 1400, quality = 0.78) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+document.querySelectorAll('.upload-zone input[type="file"]').forEach(input => {
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const key = input.dataset.key;
+    const zoneId = input.closest('.upload-zone').id;
+    showToast('이미지 압축 중...', 'info');
+    const compressed = await compressImage(file);
+    imageData[key] = compressed;
+    showImagePreview(zoneId, compressed);
+    showToast(`업로드 완료 (${Math.round(compressed.length/1024)}KB)`, 'success');
+
+    // 메인배너 교체 시 히어로 텍스트 필드 전체 초기화
+    if (key === '메인배너') {
+      ['f-hero-t1', 'f-hero-t2', 'f-hero-sub', 'f-hero-desc'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    }
+  });
+});
+
+// 이미지 삭제 버튼
+document.querySelectorAll('.remove-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const zoneId = btn.dataset.target;
+    const zone = document.getElementById(zoneId);
+    const img = zone.querySelector('img');
+    if (img) img.remove();
+    zone.querySelectorAll('.icon, .hint').forEach(el => el.style.display = '');
+    const key = zone.querySelector('input[type="file"]').dataset.key;
+    delete imageData[key];
+  });
+});
+
+// 사이드바 스크롤 네비
+document.querySelectorAll('.nav-item[data-section]').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    const target = document.getElementById('section-' + item.dataset.section);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+
+// 스크롤 시 사이드바 활성 항목 동기화
+const sections = ['basic','design','images','hero','greeting','sns'];
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id.replace('section-', '');
+      document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.toggle('active', n.dataset.section === id);
+      });
+    }
+  });
+}, { threshold: 0.4 });
+sections.forEach(id => {
+  const el = document.getElementById('section-' + id);
+  if (el) observer.observe(el);
+});
+</script>
+</body>
+</html>
